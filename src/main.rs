@@ -24,11 +24,14 @@ struct Opt {
     #[structopt(short = "f", long = "force", help = "force overwrite")]
     force: bool,
 
+    #[structopt(short = "k", long = "keep", help = "keep original file")]
+    keep: bool,
+
     #[structopt(short = "i", default_value = "")]
     input: String,
 
-    #[structopt(short = "o", default_value = "")]
-    output: String,
+    #[structopt(short = "c", help = "send to stdout instead of file")]
+    stdout: bool,
 }
 
 fn read_file(path: &mut String) -> String {
@@ -37,45 +40,72 @@ fn read_file(path: &mut String) -> String {
     return contents;
 }
 
+// fn decompress() {}
+
+// fn compress() {}
+
 fn main() {
     let opt = Opt::from_args();
     println!("opt input {:?}", opt.input);
-    println!("opt output {:?}", opt.output);
 
-    let mut vec = Vec::new();
+    let mut input_data = Vec::new();
 
+    // handle input from stdin or file
     let mut input = opt.input;
     if input != "" {
         let contents: String = read_file(&mut input);
-        vec = contents.into_bytes();
+        input_data = contents.into_bytes();
     } else {
         if atty::is(Stream::Stdin) {
             println!("no standard input - exiting");
             process::exit(1);
         }
-        io::stdin().read_to_end(&mut vec).unwrap();
+        io::stdin().read_to_end(&mut input_data).unwrap();
     }
 
-    // Encoding
-    let mut encoder = Encoder::new(Vec::new()).unwrap();
-    let mut file = Cursor::new(vec);
-    io::copy(&mut file, &mut encoder).unwrap();
-    let encoded_data = encoder.finish().into_result().unwrap();
+    // decompress or compress
+    if !opt.decompress {
+        // Encoding
+        let mut encoder = Encoder::new(input_data).expect("unable to read input data");
+        let mut file = Cursor::new(Vec::new());
+        io::copy(&mut file, &mut encoder).expect("unable to copy input data");
+        let encoded_data = encoder
+            .finish()
+            .into_result()
+            .expect("unable to encode input data");
+        input_data = encoded_data
+    } else {
+        // Decoding
+        let mut decoder = Decoder::new(&input_data[..]).expect("unable to read input data");
+        let mut decoded_data = Vec::new();
+        decoder
+            .read_to_end(&mut decoded_data)
+            .expect("unable to decode input data");
+        input_data = decoded_data;
+    }
 
-    // Decoding
-    let mut decoder = Decoder::new(&encoded_data[..]).unwrap();
-    let mut decoded_data = Vec::new();
-    decoder.read_to_end(&mut decoded_data).unwrap();
+    // make filenames (paths)
+    let mut output_fn = input.clone();
+    let original_fn = output_fn.clone();
+    if !opt.decompress {
+        output_fn = output_fn + ".gz";
+    }
 
-    let output = opt.output;
-    let vec = Vec::new();
-    if output != "" {
+    // if output is supposed to be to stdout
+    if opt.stdout == true {
         if atty::is(Stream::Stdout) {
-            println!("no standard input - exiting");
+            println!("no standard output - exiting");
             process::exit(1);
         }
-        std::io::stdout().write(&encoded_data).unwrap();
+        std::io::stdout()
+            .write(&input_data)
+            .expect("Unable to write to stdout");
+        // if output to file
     } else {
-        fs::write(output, vec).expect("Unable to write file");
+        fs::write(output_fn, &input_data).expect("Unable to write file");
+        // if not keeping the file delete
+        if !opt.keep {
+            fs::remove_file(original_fn).expect("Could not remove original file");
+        }
     }
 }
