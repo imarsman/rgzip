@@ -1,11 +1,14 @@
 extern crate libflate;
 
-use std::process;
 use atty::Stream;
+use libflate::gzip::{Decoder, Encoder};
+use std::env;
+use std::fs;
+use std::io;
 use std::io::Cursor;
-use std::path::PathBuf;
-use std::io;use std::io::{Read, Write};
-use libflate::gzip::{Encoder, Decoder};
+use std::io::{Read, Write};
+// use std::path::PathBuf;
+use std::process;
 use structopt::StructOpt;
 
 // https://docs.rs/structopt/0.3.23/structopt/
@@ -18,28 +21,48 @@ struct Opt {
     debug: bool,
 
     /// Input file
-    #[structopt(parse(from_os_str))]
-    input: Option<PathBuf>,
+    // #[structopt(parse(from_os_str))]
+    // input: Option<PathBuf>,
+
+    // output: Option<PathBuf>,
+    #[structopt(short)]
+    input: String,
 
     /// Output file, stdout if not present
-    #[structopt(parse(from_os_str))]
-    output: Option<PathBuf>,
-
-    /// Where to write the output: to `stdout` or `file`
+    // #[structopt(parse(from_os_str))]
+    // #[structopt(short)]
+    // output: Option<PathBuf>,
     #[structopt(short)]
-    out_type: String,
+    output: String,
+    // /// Where to write the output: to `stdout` or `file`
+    // #[structopt(short)]
+    // out_type: String,
 }
 
+fn readFile(path: &mut String) -> String {
+    let contents = fs::read_to_string(path).expect("Something went wrong reading the file");
+
+    return contents;
+}
 
 fn main() {
-
-    if atty::is(Stream::Stdin) {
-        println!("no standard input - exiting");
-        process::exit(1);
-    }
+    let opt = Opt::from_args();
+    println!("opt input {:?}", opt.input);
+    println!("opt output {:?}", opt.output);
 
     let mut vec = Vec::new();
-    io::stdin().read_to_end(&mut vec).unwrap();
+
+    let mut input = opt.input;
+    if input != "" {
+        let contents: String = readFile(&mut input);
+        vec = contents.into_bytes();
+    } else {
+        if atty::is(Stream::Stdin) {
+            println!("no standard input - exiting");
+            process::exit(1);
+        }
+        io::stdin().read_to_end(&mut vec).unwrap();
+    }
 
     // Encoding
     let mut encoder = Encoder::new(Vec::new()).unwrap();
