@@ -2,7 +2,6 @@ extern crate libflate;
 
 use atty::Stream;
 use libflate::gzip::{Decoder, Encoder};
-use std::env;
 use std::fs;
 use std::io;
 use std::io::Cursor;
@@ -20,26 +19,14 @@ struct Opt {
     #[structopt(short, long)]
     debug: bool,
 
-    /// Input file
-    // #[structopt(parse(from_os_str))]
-    // input: Option<PathBuf>,
-
-    // output: Option<PathBuf>,
-    #[structopt(short)]
+    #[structopt(short = "i", default_value = "")]
     input: String,
 
-    /// Output file, stdout if not present
-    // #[structopt(parse(from_os_str))]
-    // #[structopt(short)]
-    // output: Option<PathBuf>,
-    #[structopt(short)]
+    #[structopt(short = "o", default_value = "")]
     output: String,
-    // /// Where to write the output: to `stdout` or `file`
-    // #[structopt(short)]
-    // out_type: String,
 }
 
-fn readFile(path: &mut String) -> String {
+fn read_file(path: &mut String) -> String {
     let contents = fs::read_to_string(path).expect("Something went wrong reading the file");
 
     return contents;
@@ -54,7 +41,7 @@ fn main() {
 
     let mut input = opt.input;
     if input != "" {
-        let contents: String = readFile(&mut input);
+        let contents: String = read_file(&mut input);
         vec = contents.into_bytes();
     } else {
         if atty::is(Stream::Stdin) {
