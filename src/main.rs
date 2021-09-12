@@ -4,7 +4,7 @@ use atty::Stream;
 use libflate::gzip::{Decoder, Encoder};
 use std::fs;
 use std::io;
-use std::io::Cursor;
+// use std::io::Cursor;
 use std::io::{Read, Write};
 use std::process;
 use structopt::StructOpt;
@@ -18,14 +18,14 @@ struct Opt {
     #[structopt(short = "D", long)]
     debug: bool,
 
-    #[structopt(short = "d", long = "decompress", help = "decompress")]
-    decompress: bool,
-
     #[structopt(short = "f", long = "force", help = "force overwrite")]
     force: bool,
 
     #[structopt(short = "k", long = "keep", help = "keep original file")]
     keep: bool,
+
+    #[structopt(short = "d", long = "decompress", help = "decompress")]
+    decompress: bool,
 
     #[structopt(short = "i", default_value = "")]
     input: String,
@@ -34,15 +34,31 @@ struct Opt {
     stdout: bool,
 }
 
-fn read_file(path: &mut String) -> String {
-    let contents = fs::read_to_string(path).expect("Something went wrong reading the file");
+fn read_file(path: &mut String) -> std::vec::Vec<u8> {
+    let contents = fs::read(path).expect("Something went wrong reading the file");
 
     return contents;
 }
 
-// fn decompress() {}
+// decompress a byte vector - more easily tested
+// https://docs.rs/libflate/0.1.9/libflate/gzip/struct.Decoder.html
+fn decompress(input_data: std::vec::Vec<u8>) -> std::vec::Vec<u8> {
+    let mut decoder = Decoder::new(&input_data[..]).unwrap();
+    let mut buf = Vec::new();
+    decoder.read_to_end(&mut buf).unwrap();
 
-// fn compress() {}
+    return buf;
+}
+
+// compress a byte vector - more easily tested
+// https://docs.rs/libflate/0.1.25/libflate/gzip/struct.Encoder.html
+fn compress(mut input_data: std::vec::Vec<u8>) -> std::vec::Vec<u8> {
+    let mut encoder = Encoder::new(Vec::new()).unwrap();
+    encoder.write_all(&input_data).unwrap();
+    input_data = encoder.finish().into_result().unwrap();
+
+    return input_data;
+}
 
 fn main() {
     let opt = Opt::from_args();
@@ -51,10 +67,10 @@ fn main() {
     let mut input_data = Vec::new();
 
     // handle input from stdin or file
-    let mut input = opt.input;
-    if input != "" {
-        let contents: String = read_file(&mut input);
-        input_data = contents.into_bytes();
+    let mut input_fn = opt.input;
+    if input_fn != "" {
+        input_data = read_file(&mut input_fn);
+        // input_data = contents.into_bytes();
     } else {
         if atty::is(Stream::Stdin) {
             println!("no standard input - exiting");
@@ -65,27 +81,13 @@ fn main() {
 
     // decompress or compress
     if !opt.decompress {
-        // Encoding
-        let mut encoder = Encoder::new(input_data).expect("unable to read input data");
-        let mut file = Cursor::new(Vec::new());
-        io::copy(&mut file, &mut encoder).expect("unable to copy input data");
-        let encoded_data = encoder
-            .finish()
-            .into_result()
-            .expect("unable to encode input data");
-        input_data = encoded_data
+        input_data = compress(input_data)
     } else {
-        // Decoding
-        let mut decoder = Decoder::new(&input_data[..]).expect("unable to read input data");
-        let mut decoded_data = Vec::new();
-        decoder
-            .read_to_end(&mut decoded_data)
-            .expect("unable to decode input data");
-        input_data = decoded_data;
+        input_data = decompress(input_data)
     }
 
     // make filenames (paths)
-    let mut output_fn = input.clone();
+    let mut output_fn = input_fn.clone();
     let original_fn = output_fn.clone();
     if !opt.decompress {
         output_fn = output_fn + ".gz";
@@ -102,6 +104,7 @@ fn main() {
             .expect("Unable to write to stdout");
         // if output to file
     } else {
+        println!("writing");
         fs::write(output_fn, &input_data).expect("Unable to write file");
         // if not keeping the file delete
         if !opt.keep {
