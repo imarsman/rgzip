@@ -1,6 +1,7 @@
 extern crate libflate;
 
 use atty::Stream;
+use glob::glob;
 use libflate::gzip::{Decoder, Encoder};
 use std::fs;
 use std::io;
@@ -28,8 +29,12 @@ struct Opt {
     #[structopt(short = "d", long = "decompress", help = "decompress")]
     decompress: bool,
 
-    #[structopt(short = "i", default_value = "")]
-    input: String,
+    #[structopt(
+        short = "i",
+        default_value = "<filename>",
+        help = "list of paths to files"
+    )]
+    input: Vec<String>,
 
     #[structopt(short = "c", help = "send to stdout instead of file")]
     stdout: bool,
@@ -68,56 +73,72 @@ fn compress(mut input_data: std::vec::Vec<u8>) -> std::vec::Vec<u8> {
 fn main() {
     let opt = Opt::from_args();
 
+    let mut paths = Vec::new();
+
+    for opt_path in opt.input.iter() {
+        for entry in glob(opt_path).expect("Failed to read glob pattern") {
+            let p = entry.unwrap();
+            let p_str = p.into_os_string().into_string();
+            if !paths.contains(&p_str) {
+                paths.push(p_str);
+            }
+        }
+    }
+
     let mut input_data = Vec::new();
 
-    // handle input from stdin or file
-    let mut input_fn = opt.input;
-    if input_fn != "" {
-        input_data = read_file(&mut input_fn);
-        // input_data = contents.into_bytes();
-    } else {
-        if atty::is(Stream::Stdin) {
-            println!("no standard input - exiting");
-            process::exit(1);
+    // run through paths in input list
+    for path in opt.input.iter() {
+        // handle input from stdin or file
+        // let mut input_fn = opt.input;
+        let mut input_fn = path.clone();
+        if input_fn != "" {
+            input_data = read_file(&mut input_fn);
+            // input_data = contents.into_bytes();
+        } else {
+            if atty::is(Stream::Stdin) {
+                println!("no standard input - exiting");
+                process::exit(1);
+            }
+            io::stdin().read_to_end(&mut input_data).unwrap();
         }
-        io::stdin().read_to_end(&mut input_data).unwrap();
-    }
 
-    // decompress or compress
-    if !opt.decompress {
-        input_data = compress(input_data)
-    } else {
-        input_data = decompress(input_data)
-    }
-
-    // make filenames (paths)
-    let mut output_fn = input_fn.clone();
-    let original_fn = output_fn.clone();
-    if !opt.decompress {
-        output_fn = output_fn + ".gz";
-    } else {
-        if output_fn.contains(".gz") {
-            let re = Regex::new("^(.*)\\.gz").expect("error with regular expression");
-            let groups = re.captures(&output_fn).expect("problem extracting group");
-            output_fn = String::from(groups.get(1).unwrap().as_str());
+        // decompress or compress
+        if !opt.decompress {
+            input_data = compress(input_data)
+        } else {
+            input_data = decompress(input_data)
         }
-    }
 
-    // if output is supposed to be to stdout
-    if opt.stdout == true {
-        if atty::is(Stream::Stdout) {
-            println!("no standard output - exiting");
-            process::exit(1);
+        // make filenames (paths)
+        let mut output_fn = input_fn.clone();
+        let original_fn = output_fn.clone();
+        if !opt.decompress {
+            output_fn = output_fn + ".gz";
+        } else {
+            if output_fn.contains(".gz") {
+                let re = Regex::new("^(.*)\\.gz").expect("error with regular expression");
+                let groups = re.captures(&output_fn).expect("problem extracting group");
+                output_fn = String::from(groups.get(1).unwrap().as_str());
+            }
         }
-        std::io::stdout()
-            .write(&input_data)
-            .expect("Unable to write to stdout");
-        // if output to file
-    } else {
-        write_file(&mut output_fn, &mut input_data);
-        // if not keeping the file delete
-        if !opt.keep {
-            fs::remove_file(original_fn).expect("Could not remove original file");
+
+        // if output is supposed to be to stdout
+        if opt.stdout == true {
+            if atty::is(Stream::Stdout) {
+                println!("no standard output - exiting");
+                process::exit(1);
+            }
+            std::io::stdout()
+                .write(&input_data)
+                .expect("Unable to write to stdout");
+            // if output to file
+        } else {
+            write_file(&mut output_fn, &mut input_data);
+            // if not keeping the file delete
+            if !opt.keep {
+                fs::remove_file(original_fn).expect("Could not remove original file");
+            }
         }
     }
 }

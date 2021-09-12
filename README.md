@@ -16,3 +16,12 @@ is good. We'll see.
 I'm finding error handling to be a bit of a learning experience. It looks to be
 quite capable but seems to be using a different underlying philosophy than I'm
 used to.
+
+## Arguments
+
+* `rgzip -h` - print usage
+* `rgzip <file>` - gzip a file and remove the original
+* `rgzip -f <file>` - gzip a file and overwrite if it is there already (not
+  implemented yet)
+* `rgzip -k <file>` - gzip a file and do not remove the original
+* `rgzip -c <file>` - gunzip a file to stdout
