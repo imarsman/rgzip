@@ -6,8 +6,9 @@ extern crate libflate;
 // use std::path::Path;
 use std::path::PathBuf;
 use std::io;
+// use std::io::{self, Write};
 use std::io::{Read};
-// use libflate::gzip::{Decoder};
+use libflate::gzip::{Encoder, Decoder};
 use structopt::StructOpt;
 // use libflate::gzip::Decoder;
 
@@ -35,9 +36,9 @@ struct Opt {
 
 
 fn main() {
-    let opt = Opt::from_args();
-    println!("{:?}", opt);
-    println!("input: {:?}", &opt.input);
+    // let opt = Opt::from_args();
+    // println!("{:?}", opt);
+    // println!("input: {:?}", &opt.input);
     
     // let args: Vec<String> = env::args().collect();
     // if args.len() > 1 {
@@ -72,16 +73,34 @@ fn main() {
     // let stdin = io::stdin();
     // let mut stdin = stdin.lock();
 
-    let mut vec = Vec::new();
-    // let mut buffer = "".to_string();
+    // Encoding
+    let mut encoder = Encoder::new(Vec::new()).unwrap();
+    io::copy(&mut &b"Hello World!"[..], &mut encoder).unwrap();
+    let encoded_data = encoder.finish().into_result().unwrap();
 
-    let err = io::stdin().read_to_end(&mut vec);
-    // io::stdin().read_to_end(buf: &mut Vec<u8>);
+    // Decoding
+    let mut decoder = Decoder::new(&encoded_data[..]).unwrap();
+    let mut decoded_data = Vec::new();
+    decoder.read_to_end(&mut decoded_data).unwrap();
 
-    // // let buffer = stdin.fill_buf().unwrap();
+    assert_eq!(decoded_data, b"Hello World!");
 
-    let s = String::from_utf8_lossy(&vec);
-    // // // work with buffer
-    println!("Error {:?} Buffer {:?}", err, s);
+    println!("{:?}", String::from_utf8(decoded_data).unwrap())
+
+    // // Encoding
+
+    // let mut vec = Vec::new();
+    // let result = io::stdin().read_to_end(&mut vec);
+    // if result.is_err() {
+    //     // println!("error %{:?}", result);
+    // }
+
+    // let encoder = Encoder::new(vec).unwrap();
+    // let encoded_data = encoder.finish().into_result().unwrap();
+
+    // let result = io::stdout().write_all(&encoded_data);
+    // if result.is_err() {
+    //     println!("error %{:?}", result);
+    // }
 
 }
