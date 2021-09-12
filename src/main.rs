@@ -133,6 +133,7 @@ fn main() {
             }
         }
 
+        // check for force
         if Path::new(&output_fn).exists() {
             if !opt.force {
                 println!("skipping {:?}", output_fn);
@@ -140,13 +141,12 @@ fn main() {
             }
         }
 
+        // write the file
         write_file(&mut output_fn, &mut input_data);
+
         // if not keeping the file delete
         if !opt.keep {
             fs::remove_file(original_fn).expect("Could not remove original file");
-        } else if opt.force {
-            fs::remove_file(original_fn).expect("Could not remove original file");
         }
-        // }
     }
 }

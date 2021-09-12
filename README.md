@@ -24,3 +24,58 @@ used to.
 * `rgzip -f <file>` - gzip a file and overwrite if it is there already
 * `rgzip -k <file>` - gzip a file and do not remove the original
 * `rgzip -c <file>` - gunzip a file to stdout
+
+
+## Usage
+
+I will be adding testing.
+
+To build with debugging
+
+`cargo build`
+
+output goes in `./target/debug/rgzip`
+
+To build for release
+
+`cargo build --release`
+
+output goes in `./target/release/rgzip`
+
+
+## Simple test to compare with gogzip
+
+Golang gogzip is slightly slower than the Rust rgzip release build. Both are
+slower than the built-in gzip.
+
+The Go version has more lines, but it also has more going on. In general,
+though, the Rust version is a lot more concise. If the Rust version had the
+extra logic added to it that exists in the Go version it would still likely be
+half as many lines of code. This speaks I think partly to the languages
+themselves and also I am sure, my programming.
+
+```
+time for i in {1..1000}; do rgzip -k -f -i sample/*.txt; done
+
+real	0m6.662s
+user	0m3.735s
+sys	0m1.848s
+```
+
+```
+$: time for i in {1..1000}; do gogzip -f -k sample/*.txt; done
+
+real	0m8.141s
+user	0m4.123s
+sys	0m3.811s
+```
+
+Here is the native one
+
+```
+$: time for i in {1..1000}; do gzip -f -k sample/*.txt; done
+
+real	0m4.451s
+user	0m1.428s
+sys	0m2.852s
+```
