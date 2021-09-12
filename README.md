@@ -12,3 +12,7 @@ I've spent about 3 hours on this, including the time to install Rust, add in the
 VS Code support, figure out what the heck cargo is, find out where things go
 when they are compiled, etc. I see that Rust has the ability to do testing. That
 is good. We'll see.
+
+I'm finding error handling to be a bit of a learning experience. It looks to be
+quite capable but seems to be using a different underlying philosophy than I'm
+used to.
