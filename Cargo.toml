@@ -8,3 +8,4 @@ edition = "2018"
 [dependencies]
 libflate = "1.1.1"
 structopt = { version = "0.3", default-features = false }
+atty = "0.2"

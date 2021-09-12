@@ -1,16 +1,12 @@
 extern crate libflate;
 
-// use std::env;
-// use std::fs;
-// use std::io;
-// use std::path::Path;
+use std::process;
+use atty::Stream;
+use std::io::Cursor;
 use std::path::PathBuf;
-use std::io;
-// use std::io::{self, Write};
-use std::io::{Read};
+use std::io;use std::io::{Read};
 use libflate::gzip::{Encoder, Decoder};
 use structopt::StructOpt;
-// use libflate::gzip::Decoder;
 
 // https://docs.rs/structopt/0.3.23/structopt/
 #[derive(Debug, StructOpt)]
@@ -36,46 +32,19 @@ struct Opt {
 
 
 fn main() {
-    // let opt = Opt::from_args();
-    // println!("{:?}", opt);
-    // println!("input: {:?}", &opt.input);
-    
-    // let args: Vec<String> = env::args().collect();
-    // if args.len() > 1 {
-    //     let config = Config::new(&args);
 
-    //     if Path::new(&config.filename).exists() {
-    //         let contents = fs::read_to_string(&config.filename)
-    //             .expect("Something went wrong reading the file");
+    if atty::is(Stream::Stdin) {
+        println!("no standard input - exiting");
+        process::exit(1);
+    }
 
-    //         println!("filename: {}:\ncontents:\n{}", config.filename, contents);
-
-    //         let mut input = io::stdin();
-    //         let mut decoder = Decoder::new(&mut input).unwrap();
-    //         io::copy(&mut decoder, &mut io::stdout()).unwrap();
-    //     } else {
-    //         println!("filename not found")
-    //     }
-    // } else {
-    //     println!("no useful args")
-    // }
- 
-    // let stdin = io::stdin();
-    // // if stdin == 
-    // if stdin. .lines().count() > 0 {
-    
-    //     for line in stdin.lock().lines() {
-    //         println!("{}", line.unwrap());
-    //     }
-    // }
-
-    // https://doc.servo.org/std/io/trait.BufRead.html
-    // let stdin = io::stdin();
-    // let mut stdin = stdin.lock();
+    let mut vec = Vec::new();
+    io::stdin().read_to_end(&mut vec).unwrap();
 
     // Encoding
     let mut encoder = Encoder::new(Vec::new()).unwrap();
-    io::copy(&mut &b"Hello World!"[..], &mut encoder).unwrap();
+    let mut file = Cursor::new(vec);
+    io::copy(&mut file, &mut encoder).unwrap();
     let encoded_data = encoder.finish().into_result().unwrap();
 
     // Decoding
@@ -83,24 +52,7 @@ fn main() {
     let mut decoded_data = Vec::new();
     decoder.read_to_end(&mut decoded_data).unwrap();
 
-    assert_eq!(decoded_data, b"Hello World!");
+    // assert_eq!(decoded_data, b"Hello World!");
 
-    println!("{:?}", String::from_utf8(decoded_data).unwrap())
-
-    // // Encoding
-
-    // let mut vec = Vec::new();
-    // let result = io::stdin().read_to_end(&mut vec);
-    // if result.is_err() {
-    //     // println!("error %{:?}", result);
-    // }
-
-    // let encoder = Encoder::new(vec).unwrap();
-    // let encoded_data = encoder.finish().into_result().unwrap();
-
-    // let result = io::stdout().write_all(&encoded_data);
-    // if result.is_err() {
-    //     println!("error %{:?}", result);
-    // }
-
+    println!("Got {:?}", String::from_utf8(decoded_data).unwrap())
 }
