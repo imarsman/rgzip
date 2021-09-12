@@ -12,7 +12,7 @@ use structopt::StructOpt;
 
 // https://docs.rs/structopt/0.3.23/structopt/
 #[derive(Debug, StructOpt)]
-#[structopt(name = "example", about = "gzip stdin or a file")]
+#[structopt(name = "rgzip", about = "gzip stdin or a file")]
 struct Opt {
     /// Activate debug mode
     // short and long flags (-d, --debug) will be deduced from the field's name
