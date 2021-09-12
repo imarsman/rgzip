@@ -5,6 +5,7 @@ use libflate::gzip::{Decoder, Encoder};
 use std::fs;
 use std::io;
 // use std::io::Cursor;
+use regex::Regex;
 use std::io::{Read, Write};
 use std::process;
 use structopt::StructOpt;
@@ -66,7 +67,6 @@ fn compress(mut input_data: std::vec::Vec<u8>) -> std::vec::Vec<u8> {
 
 fn main() {
     let opt = Opt::from_args();
-    println!("opt input {:?}", opt.input);
 
     let mut input_data = Vec::new();
 
@@ -95,6 +95,12 @@ fn main() {
     let original_fn = output_fn.clone();
     if !opt.decompress {
         output_fn = output_fn + ".gz";
+    } else {
+        if output_fn.contains(".gz") {
+            let re = Regex::new("^(.*)\\.gz").expect("error with regular expression");
+            let groups = re.captures(&output_fn).expect("problem extracting group");
+            output_fn = String::from(groups.get(1).unwrap().as_str());
+        }
     }
 
     // if output is supposed to be to stdout
@@ -108,7 +114,6 @@ fn main() {
             .expect("Unable to write to stdout");
         // if output to file
     } else {
-        println!("writing");
         write_file(&mut output_fn, &mut input_data);
         // if not keeping the file delete
         if !opt.keep {
