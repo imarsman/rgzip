@@ -40,6 +40,10 @@ fn read_file(path: &mut String) -> std::vec::Vec<u8> {
     return contents;
 }
 
+fn write_file(path: &mut String, data: &mut std::vec::Vec<u8>) {
+    fs::write(path, &data).expect("Unable to write file");
+}
+
 // decompress a byte vector - more easily tested
 // https://docs.rs/libflate/0.1.9/libflate/gzip/struct.Decoder.html
 fn decompress(input_data: std::vec::Vec<u8>) -> std::vec::Vec<u8> {
@@ -105,7 +109,7 @@ fn main() {
         // if output to file
     } else {
         println!("writing");
-        fs::write(output_fn, &input_data).expect("Unable to write file");
+        write_file(&mut output_fn, &mut input_data);
         // if not keeping the file delete
         if !opt.keep {
             fs::remove_file(original_fn).expect("Could not remove original file");
