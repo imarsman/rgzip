@@ -21,7 +21,6 @@ used to.
 
 * `rgzip -h` - print usage
 * `rgzip <file>` - gzip a file and remove the original
-* `rgzip -f <file>` - gzip a file and overwrite if it is there already (not
-  implemented yet)
+* `rgzip -f <file>` - gzip a file and overwrite if it is there already
 * `rgzip -k <file>` - gzip a file and do not remove the original
 * `rgzip -c <file>` - gunzip a file to stdout

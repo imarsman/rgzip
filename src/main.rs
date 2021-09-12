@@ -3,10 +3,9 @@ extern crate libflate;
 use atty::Stream;
 use glob::glob;
 use libflate::gzip::{Decoder, Encoder};
+use regex::Regex;
 use std::fs;
 use std::io;
-// use std::io::Cursor;
-use regex::Regex;
 use std::io::{Read, Write};
 use std::process;
 use structopt::StructOpt;
@@ -87,21 +86,31 @@ fn main() {
 
     let mut input_data = Vec::new();
 
+    // if output is supposed to be to stdout handle that
+    if opt.stdout == true {
+        if atty::is(Stream::Stdout) {
+            println!("no standard output - exiting");
+            process::exit(1);
+        }
+        io::stdin().read_to_end(&mut input_data).unwrap();
+        if opt.decompress {
+            input_data = decompress(input_data);
+        } else {
+            input_data = compress(input_data);
+        }
+        std::io::stdout()
+            .write(&input_data)
+            .expect("Unable to write to stdout");
+        process::exit(0);
+    }
+
     // run through paths in input list
     for path in opt.input.iter() {
         // handle input from stdin or file
         // let mut input_fn = opt.input;
         let mut input_fn = path.clone();
-        if input_fn != "" {
-            input_data = read_file(&mut input_fn);
-            // input_data = contents.into_bytes();
-        } else {
-            if atty::is(Stream::Stdin) {
-                println!("no standard input - exiting");
-                process::exit(1);
-            }
-            io::stdin().read_to_end(&mut input_data).unwrap();
-        }
+
+        input_data = read_file(&mut input_fn);
 
         // decompress or compress
         if !opt.decompress {
@@ -123,22 +132,13 @@ fn main() {
             }
         }
 
-        // if output is supposed to be to stdout
-        if opt.stdout == true {
-            if atty::is(Stream::Stdout) {
-                println!("no standard output - exiting");
-                process::exit(1);
-            }
-            std::io::stdout()
-                .write(&input_data)
-                .expect("Unable to write to stdout");
-            // if output to file
-        } else {
-            write_file(&mut output_fn, &mut input_data);
-            // if not keeping the file delete
-            if !opt.keep {
-                fs::remove_file(original_fn).expect("Could not remove original file");
-            }
+        write_file(&mut output_fn, &mut input_data);
+        // if not keeping the file delete
+        if !opt.keep {
+            fs::remove_file(original_fn).expect("Could not remove original file");
+        } else if opt.force {
+            fs::remove_file(original_fn).expect("Could not remove original file");
         }
+        // }
     }
 }
