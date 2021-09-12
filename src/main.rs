@@ -6,7 +6,6 @@ use std::fs;
 use std::io;
 use std::io::Cursor;
 use std::io::{Read, Write};
-// use std::path::PathBuf;
 use std::process;
 use structopt::StructOpt;
 
@@ -16,8 +15,14 @@ use structopt::StructOpt;
 struct Opt {
     /// Activate debug mode
     // short and long flags (-d, --debug) will be deduced from the field's name
-    #[structopt(short, long)]
+    #[structopt(short = "D", long)]
     debug: bool,
+
+    #[structopt(short = "d", long = "decompress", help = "decompress")]
+    decompress: bool,
+
+    #[structopt(short = "f", long = "force", help = "force overwrite")]
+    force: bool,
 
     #[structopt(short = "i", default_value = "")]
     input: String,
@@ -65,12 +70,12 @@ fn main() {
     let output = opt.output;
     let vec = Vec::new();
     if output != "" {
-        fs::write(output, vec).expect("Unable to write file");
-    } else {
         if atty::is(Stream::Stdout) {
             println!("no standard input - exiting");
             process::exit(1);
         }
         std::io::stdout().write(&encoded_data).unwrap();
+    } else {
+        fs::write(output, vec).expect("Unable to write file");
     }
 }
