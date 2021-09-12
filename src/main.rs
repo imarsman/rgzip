@@ -62,7 +62,15 @@ fn main() {
     let mut decoded_data = Vec::new();
     decoder.read_to_end(&mut decoded_data).unwrap();
 
-    std::io::stdout().write(&encoded_data).unwrap();
-
-    // println!("Got {:?}", String::from_utf8(decoded_data).unwrap())
+    let output = opt.output;
+    let vec = Vec::new();
+    if output != "" {
+        fs::write(output, vec).expect("Unable to write file");
+    } else {
+        if atty::is(Stream::Stdout) {
+            println!("no standard input - exiting");
+            process::exit(1);
+        }
+        std::io::stdout().write(&encoded_data).unwrap();
+    }
 }
