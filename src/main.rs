@@ -7,6 +7,7 @@ use regex::Regex;
 use std::fs;
 use std::io;
 use std::io::{Read, Write};
+use std::path::Path;
 use std::process;
 use structopt::StructOpt;
 
@@ -129,6 +130,13 @@ fn main() {
                 let re = Regex::new("^(.*)\\.gz").expect("error with regular expression");
                 let groups = re.captures(&output_fn).expect("problem extracting group");
                 output_fn = String::from(groups.get(1).unwrap().as_str());
+            }
+        }
+
+        if Path::new(&output_fn).exists() {
+            if !opt.force {
+                println!("skipping {:?}", output_fn);
+                continue;
             }
         }
 
