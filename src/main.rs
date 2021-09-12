@@ -4,7 +4,7 @@ use std::process;
 use atty::Stream;
 use std::io::Cursor;
 use std::path::PathBuf;
-use std::io;use std::io::{Read};
+use std::io;use std::io::{Read, Write};
 use libflate::gzip::{Encoder, Decoder};
 use structopt::StructOpt;
 
@@ -52,7 +52,7 @@ fn main() {
     let mut decoded_data = Vec::new();
     decoder.read_to_end(&mut decoded_data).unwrap();
 
-    // assert_eq!(decoded_data, b"Hello World!");
+    std::io::stdout().write(&encoded_data).unwrap();
 
-    println!("Got {:?}", String::from_utf8(decoded_data).unwrap())
+    // println!("Got {:?}", String::from_utf8(decoded_data).unwrap())
 }
