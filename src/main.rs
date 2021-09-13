@@ -40,6 +40,17 @@ struct Opt {
     stdout: bool,
 }
 
+fn is_gzipped(input_data: &std::vec::Vec<u8>) -> Result<bool, io::Error> {
+    if input_data.len() < 2 {}
+
+    let mut found = false;
+
+    if input_data[0] == 0x1F && input_data[1] == 0x8B {
+        found = true;
+    }
+    Ok(found)
+}
+
 fn read_file(path: &mut String) -> std::vec::Vec<u8> {
     let contents = fs::read(path).expect("Something went wrong reading the file");
 
@@ -53,9 +64,11 @@ fn write_file(path: &mut String, data: &mut std::vec::Vec<u8>) {
 // decompress a byte vector - more easily tested
 // https://docs.rs/libflate/0.1.9/libflate/gzip/struct.Decoder.html
 fn decompress(input_data: std::vec::Vec<u8>) -> std::vec::Vec<u8> {
-    let mut decoder = Decoder::new(&input_data[..]).unwrap();
+    let mut decoder = Decoder::new(&input_data[..]).expect("could not decompress");
     let mut buf = Vec::new();
-    decoder.read_to_end(&mut buf).unwrap();
+    decoder
+        .read_to_end(&mut buf)
+        .expect("problems finishing decompression");
 
     return buf;
 }
@@ -63,9 +76,14 @@ fn decompress(input_data: std::vec::Vec<u8>) -> std::vec::Vec<u8> {
 // compress a byte vector - more easily tested
 // https://docs.rs/libflate/0.1.25/libflate/gzip/struct.Encoder.html
 fn compress(mut input_data: std::vec::Vec<u8>) -> std::vec::Vec<u8> {
-    let mut encoder = Encoder::new(Vec::new()).unwrap();
-    encoder.write_all(&input_data).unwrap();
-    input_data = encoder.finish().into_result().unwrap();
+    let mut encoder = Encoder::new(Vec::new()).expect("could not compress");
+    encoder
+        .write_all(&input_data)
+        .expect("could not write gzip encoded data");
+    input_data = encoder
+        .finish()
+        .into_result()
+        .expect("problems finishing compression");
 
     return input_data;
 }
@@ -89,11 +107,22 @@ fn main() {
 
     // if output is supposed to be to stdout handle that
     if opt.stdout == true {
-        if atty::is(Stream::Stdout) {
-            println!("no standard output - exiting");
+        if atty::is(Stream::Stdin) {
+            println!("no standard input - exiting");
             process::exit(1);
         }
-        io::stdin().read_to_end(&mut input_data).unwrap();
+        io::stdin()
+            .read_to_end(&mut input_data)
+            .expect("problems reading from stdin");
+        let is_gzipped = is_gzipped(&input_data).unwrap();
+
+        if !is_gzipped {
+            if opt.decompress {
+                println!("stdin not compressed");
+                process::exit(1);
+            }
+        }
+
         if opt.decompress {
             input_data = decompress(input_data);
         } else {
@@ -112,6 +141,13 @@ fn main() {
         let mut input_fn = path.clone();
 
         input_data = read_file(&mut input_fn);
+
+        let is_gzipped = is_gzipped(&input_data).unwrap();
+
+        if is_gzipped && !opt.decompress {
+            println!("{} not compressed", path);
+            continue;
+        }
 
         // decompress or compress
         if !opt.decompress {
