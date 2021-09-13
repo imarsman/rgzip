@@ -107,15 +107,18 @@ fn main() {
 
     // if output is supposed to be to stdout handle that
     if opt.stdout == true {
+        // Make sure there is stdin or exit
         if atty::is(Stream::Stdin) {
             println!("no standard input - exiting");
             process::exit(1);
         }
+        // read input
         io::stdin()
             .read_to_end(&mut input_data)
             .expect("problems reading from stdin");
-        let is_gzipped = is_gzipped(&input_data).unwrap();
 
+        // test gzipped and if not and decompress is set exit
+        let is_gzipped = is_gzipped(&input_data).unwrap();
         if !is_gzipped {
             if opt.decompress {
                 println!("stdin not compressed");
@@ -172,7 +175,7 @@ fn main() {
         // check for force
         if Path::new(&output_fn).exists() {
             if !opt.force {
-                println!("skipping {:?}", output_fn);
+                println!("for not set - skipping {:?}", output_fn);
                 continue;
             }
         }
