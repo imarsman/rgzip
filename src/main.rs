@@ -40,8 +40,6 @@ struct Opt {
 }
 
 fn is_gzipped(input_data: &std::vec::Vec<u8>) -> Result<bool, io::Error> {
-    if input_data.len() < 2 {}
-
     let mut found = false;
 
     if input_data[0] == 0x1F && input_data[1] == 0x8B {
