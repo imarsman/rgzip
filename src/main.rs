@@ -133,7 +133,7 @@ fn main() {
         }
         std::io::stdout()
             .write(&input_data)
-            .expect("Unable to write to stdout");
+            .expect("unable to write to stdout");
         process::exit(0);
     }
 
