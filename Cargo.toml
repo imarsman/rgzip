@@ -9,5 +9,5 @@ edition = "2018"
 libflate = "1.1.1"
 structopt = { version = "0.3", default-features = false }
 atty = "0.2"
-regex = "1"
+# regex = "1"
 glob = "0.2"

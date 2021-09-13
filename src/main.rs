@@ -3,7 +3,6 @@ extern crate libflate;
 use atty::Stream;
 use glob::glob;
 use libflate::gzip::{Decoder, Encoder};
-use regex::Regex;
 use std::fs;
 use std::io;
 use std::io::{Read, Write};
@@ -165,17 +164,15 @@ fn main() {
         if !opt.decompress {
             output_fn = output_fn + ".gz";
         } else {
-            if output_fn.contains(".gz") {
-                let re = Regex::new("^(.*)\\.gz").expect("error with regular expression");
-                let groups = re.captures(&output_fn).expect("problem extracting group");
-                output_fn = String::from(groups.get(1).unwrap().as_str());
+            if output_fn.ends_with(".gz") {
+                output_fn = output_fn.strip_suffix(".gz").unwrap().to_string();
             }
         }
 
         // check for force
         if Path::new(&output_fn).exists() {
             if !opt.force {
-                println!("for not set - skipping {:?}", output_fn);
+                println!("force not set - skipping {:?}", output_fn);
                 continue;
             }
         }
