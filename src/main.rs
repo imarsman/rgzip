@@ -1,4 +1,4 @@
-extern crate libflate;
+// extern crate libflate;
 
 use atty::Stream;
 use glob::glob;
