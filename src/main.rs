@@ -1,5 +1,3 @@
-// extern crate libflate;
-
 use atty::Stream;
 use glob::glob;
 use libflate::gzip::{Decoder, Encoder};
@@ -25,6 +23,8 @@ struct Opt {
     #[structopt(short = "k", long = "keep", help = "keep original file")]
     keep: bool,
 
+    // #[structopt(short = "l", long = "compression", help = "compression level")]
+    // compression: i8,
     #[structopt(short = "d", long = "decompress", help = "decompress")]
     decompress: bool,
 
